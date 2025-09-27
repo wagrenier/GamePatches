@@ -1,4 +1,14 @@
 StarOcean/SecondStoryFix/.idea/
+StarOcean/SecondStoryFix/.vs/
 StarOcean/SecondStoryFix/bin/
 StarOcean/SecondStoryFix/libs/*.dll
 StarOcean/SecondStoryFix/obj/
+*/.idea/
+*/cmake-build-debug/*
+*/cmake-build-release/*
+StarOcean/DivineForce/.idea/
+StarOcean/DivineForce/cmake-build-debug/
+StarOcean/DivineForce/cmake-build-release/
+ResonanceOfFate/.idea/
+ResonanceOfFate/cmake-build-debug/
+ResonanceOfFate/cmake-build-release/
