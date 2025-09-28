@@ -2,7 +2,7 @@
 #include "helper.hpp"
 #include <iostream>
 #include <inipp.h>
-#include "safetyhook.hpp"
+#include <safetyhook.hpp>
 
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/base_sink.h"

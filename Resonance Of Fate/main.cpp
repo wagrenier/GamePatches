@@ -2,7 +2,7 @@
 #include "helper.hpp"
 #include <iostream>
 #include <inipp.h>
-#include "safetyhook.hpp"
+#include <safetyhook.hpp>
 
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/base_sink.h"
@@ -81,28 +81,43 @@ void ScanPatterns()
 {
     spdlog::info("Scanning Aspect Ratio");
 
-    if (uint8_t* aspect_ratio_check = Memory::PatternScan(baseModule, "00 0F 00 00 66 89 02 B8 70 08 00 00"))
+    if (uint8_t* aspect_ratio_check = Memory::PatternScan(baseModule, "00 0F 70 08 C7 45 E0 00 0F 70 08 EB 2E C7 45 D0 00"))
     {
         spdlog::info("Aspect Ratio Check: Address is {:s}+{:x}", sExeName.c_str(), (uintptr_t)aspect_ratio_check - (uintptr_t)baseModule);
         DWORD oldProtection;
-
-        //static SafetyHookMid aspect_hook{};
-        //aspect_hook = safetyhook::create_mid(aspect_ratio_check + 0x9,
-        //    [](SafetyHookContext& ctx) {
-        //        //spdlog::info("Fov: {}", ctx.);
-        //    });
-
         VirtualProtect((LPVOID)aspect_ratio_check, 0x100, PAGE_EXECUTE_READWRITE, &oldProtection);
 
         /// Replaces the 4k resolution with the current monitor resolution
-        *((PUINT)(aspect_ratio_check)) = iCurrentResX;
-        *((PUINT)(aspect_ratio_check + 0x8)) = iCurrentResY;
+        *((PUSHORT)(aspect_ratio_check)) = (short) iCurrentResX;
+        *((PUSHORT)(aspect_ratio_check + 0x2)) = (short) iCurrentResY;
+
+        *((PUSHORT)(aspect_ratio_check + 0x7)) = (short) iCurrentResX;
+        *((PUSHORT)(aspect_ratio_check + 0x9)) = (short) iCurrentResY;
+
         VirtualProtect((LPVOID)aspect_ratio_check, 0x100, oldProtection, &oldProtection);
     }
     else
     {
         spdlog::error("Aspect Ratio: Pattern scan failed.");
     }
+
+    // Field of View
+    //uint8_t* FOVScanResult = Memory::PatternScan(baseModule, "F3 0F ?? ?? ?? F3 44 ?? ?? ?? ?? ?? ?? ?? F3 0F ?? ?? ?? F3 44 ?? ?? ?? ?? ?? ?? ?? F3 ?? ?? ?? ??");
+    //if (FOVScanResult)
+    //{
+    //    spdlog::info("FOV: Address is {:s}+{:x}", sExeName.c_str(), (uintptr_t)FOVScanResult - (uintptr_t)baseModule);
+    //    static SafetyHookMid FOVMidHook{};
+    //    FOVMidHook = safetyhook::create_mid(FOVScanResult,
+    //        [](SafetyHookContext& ctx) {
+    //            spdlog::info("FOV value is {}", ctx.xmm2.f32[0]);
+    //            //ctx.xmm2.f32[0] *= 1.00f / ( (iCurrentResX/iCurrentResY) / (16/9));
+    //        });
+    //}
+    //else if (!FOVScanResult)
+    //{
+    //    spdlog::error("FOV: Pattern scan failed.");
+    //}
+
 }
 
 void Configuration()

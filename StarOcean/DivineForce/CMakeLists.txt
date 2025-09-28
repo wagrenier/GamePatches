@@ -11,7 +11,7 @@ include(spdlog)
 include(safetyhook)
 include(inipp)
 
-add_library(${CMAKE_PROJECT_NAME} SHARED main.cpp helper.hpp safetyhook.hpp)
+add_library(${CMAKE_PROJECT_NAME} SHARED main.cpp helper.hpp)
 
 set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES SUFFIX ".asi")
 
