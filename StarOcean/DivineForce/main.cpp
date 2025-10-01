@@ -21,7 +21,6 @@ std::string sConfigFile = sFixName + ".ini";
 std::pair DesktopDimensions = { 0,0 };
 
 // Ini variables
-float fov = 60.0f;
 
 // Variables
 int iCurrentResX;
@@ -81,27 +80,62 @@ void ScanPatterns()
 {
     spdlog::info("Scanning Aspect Ratio");
 
-    if (uint8_t* aspect_ratio_check = Memory::PatternScan(baseModule, "00 0F 00 00 66 89 02 B8 70 08 00 00"))
+    // 00 0F 00 00 66 89 02 B8 70 08 00 00 -> 4K
+    // 00 0A 00 00 E9 C7 -> 00000001409A732A
+    // B8 38 04 00 00    -> 00000001400479FD
+
+    // X resolution
+    if (uint8_t* aspect_ratio_check = Memory::PatternScan(baseModule, "00 0A 00 00 E9 C7"))
     {
         spdlog::info("Aspect Ratio Check: Address is {:s}+{:x}", sExeName.c_str(), (uintptr_t)aspect_ratio_check - (uintptr_t)baseModule);
+
         DWORD oldProtection;
-
-        //static SafetyHookMid aspect_hook{};
-        //aspect_hook = safetyhook::create_mid(aspect_ratio_check + 0x9,
-        //    [](SafetyHookContext& ctx) {
-        //        //spdlog::info("Fov: {}", ctx.);
-        //    });
-
-        VirtualProtect((LPVOID)aspect_ratio_check, 0x100, PAGE_EXECUTE_READWRITE, &oldProtection);
-
-        /// Replaces the 4k resolution with the current monitor resolution
+        VirtualProtect((LPVOID)aspect_ratio_check, sizeof(int), PAGE_EXECUTE_READWRITE, &oldProtection);
         *((PUINT)(aspect_ratio_check)) = iCurrentResX;
-        *((PUINT)(aspect_ratio_check + 0x8)) = iCurrentResY;
-        VirtualProtect((LPVOID)aspect_ratio_check, 0x100, oldProtection, &oldProtection);
+        VirtualProtect((LPVOID)aspect_ratio_check, sizeof(int), oldProtection, &oldProtection);
     }
     else
     {
         spdlog::error("Aspect Ratio: Pattern scan failed.");
+    }
+
+    // Y resolution
+    if (uint8_t* aspect_ratio_check = Memory::PatternScan(baseModule, "B8 38 04 00 00"))
+    {
+        spdlog::info("Aspect Ratio Check: Address is {:s}+{:x}", sExeName.c_str(), (uintptr_t)aspect_ratio_check - (uintptr_t)baseModule);
+
+        DWORD oldProtection;
+        VirtualProtect((LPVOID)(aspect_ratio_check+0x1), sizeof(int), PAGE_EXECUTE_READWRITE, &oldProtection);
+        *((PUINT)(aspect_ratio_check + 0x1)) = iCurrentResY;
+        VirtualProtect((LPVOID)(aspect_ratio_check+0x1), sizeof(int), oldProtection, &oldProtection);
+    }
+    else
+    {
+        spdlog::error("Aspect Ratio: Pattern scan failed.");
+    }
+
+    spdlog::info("Scanning FOV");
+
+    if (uint8_t* fov_pattern = Memory::PatternScan(baseModule, "F3 44 ?? ?? ?? ?? F3 44 ?? ?? ?? ?? F3 ?? ?? 40 44"))
+    {
+        spdlog::info("FOV Check: Address is {:s}+{:x}", sExeName.c_str(), (uintptr_t)fov_pattern - (uintptr_t)baseModule);
+
+        static SafetyHookMid fov_hook{};
+        fov_hook = safetyhook::create_mid(fov_pattern+0x6,
+            [](SafetyHookContext& ctx) {
+                float screen_aspect_ratio = (float)iCurrentResX/(float)iCurrentResY;
+                float native_aspect_ratio = (16.0f/9.0f);
+                
+                if (screen_aspect_ratio > native_aspect_ratio)
+                {
+                    float aspect_ratio_ratio = screen_aspect_ratio / native_aspect_ratio;
+                    ctx.xmm10.f32[0] *= 1.00f / aspect_ratio_ratio;
+                }
+            });
+    }
+    else
+    {
+        spdlog::error("FOV: Pattern scan failed.");
     }
 }
 
@@ -126,9 +160,8 @@ void Configuration()
     // Parse config
     ini.strip_trailing_comments();
     spdlog::info("----------");
-    inipp::get_value(ini.sections["Gameplay"], "Fov", fov);
-
-    spdlog::info("Config values: FOV {}", fov);
+    //inipp::get_value(ini.sections["Gameplay"], "Fov", fov);
+    //spdlog::info("Config values: FOV {}", fov);
 
 
     spdlog::info("----------");

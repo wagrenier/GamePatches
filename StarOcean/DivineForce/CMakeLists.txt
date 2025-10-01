@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(DivineForce)
+project(DivineForceFix)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -17,5 +17,5 @@ set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES SUFFIX ".asi")
 
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE spdlog safetyhook inipp)
 
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/resource/${CMAKE_PROJECT_NAME}Fix.ini DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/resource/${CMAKE_PROJECT_NAME}.ini DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/resource/XINPUT9_1_0.dll DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
